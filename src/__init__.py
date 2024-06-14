@@ -1,6 +1,7 @@
 from .database import main as create_database_session
 from .s3 import FileStorage
 from .bot import main as telegram_bot_main
+from .ml import get_description
 
 
 async def main(
@@ -10,4 +11,4 @@ async def main(
 ):
     database_session = create_database_session(database_driver, database_host, database_port, database_username, database_password, database_name)
     file_storage = FileStorage(endpoint_url, region, access_key, private_access_key, bucket_name)
-    await telegram_bot_main(tg_bot_token, file_storage, database_session)
+    await telegram_bot_main(tg_bot_token, file_storage, database_session, get_description)

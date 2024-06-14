@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import Callable, Any
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
@@ -12,7 +13,7 @@ from src.s3 import FileStorage
 from .messages import get_formatted_message
 
 
-async def main(token: str, file_storage: FileStorage, database_session: Session):
+async def main(token: str, file_storage: FileStorage, database_session: Session, get_description: Callable[[Any], str]):
     bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
     dispatcher = Dispatcher()
@@ -32,10 +33,16 @@ async def main(token: str, file_storage: FileStorage, database_session: Session)
         bytes_buffer = BytesIO()
         await bot.download(message.photo[-1], destination=bytes_buffer)
         key = file_storage.upload_file(bytes_buffer)
+
         upload = Upload(user_id=user_id, input_image_key=key)
         database_session.add(upload)
         database_session.commit()
-        await message.reply(get_formatted_message("uploaded", message, {"upload_id": str(upload.id)}))
+
+        bot_reply_message = await message.reply(get_formatted_message("uploaded", message, {"upload_id": str(upload.id)}))
+
+        description = get_description(bytes_buffer)
+
+        await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
 
     @dispatcher.message()
     async def echo_handler(message: Message) -> None:
