@@ -31,3 +31,6 @@ class FileStorage:
         key = self.generate_key()
         self.client.upload_fileobj(file, self.bucket_name, key)
         return key
+
+    def get_file_url(self, file_key: str) -> str:
+        return f"{self.endpoint_url}/{self.bucket_name}/{file_key}"
