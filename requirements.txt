@@ -1,0 +1,4 @@
+boto3==1.34.126
+aiogram==3.7.0
+psycopg2-binary==2.9.9
+SQLAlchemy==2.0.30
