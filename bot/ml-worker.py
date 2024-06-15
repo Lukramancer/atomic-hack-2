@@ -17,45 +17,48 @@ def create_listener(database_session: Session, file_storage: FileStorage, messag
         image_file_buffer.seek(0)
         return image_file_buffer
 
-    def listener(message: IncomingMessage):
-        message = message.body.decode("utf-8")
-        if not message.endswith("-created"):
-            return
-
+    async def listener(message: IncomingMessage):
         try:
-            upload_id = int(message[:message.index("-created")])
-        except ValueError:
-            return
+            message = message.body.decode("utf-8")
+            if not message.endswith("-created"):
+                return
 
-        upload: Upload = database_session.query(Upload).get(upload_id)
-        if upload_id is None:
-            return
+            try:
+                upload_id = int(message[:message.index("-created")])
+            except ValueError:
+                return
 
-        input_image_file_buffer = file_storage.download_file(upload.input_image_key)
+            upload: Upload = database_session.query(Upload).get(upload_id)
+            if upload_id is None:
+                return
 
-        prediction_result = predict(input_image_file_buffer)
-        if isinstance(prediction_result, str):
-            description = prediction_result
-            upload.description = description
-        else:
-            images, description = prediction_result
-            main_image, errors_images = images
+            input_image_file_buffer = file_storage.download_file(upload.input_image_key)
 
-            main_image_file_buffer = put_image_in_file_buffer(main_image, "png")
-            main_image_file_key = file_storage.upload_file(main_image_file_buffer, ".png")
+            prediction_result = predict(input_image_file_buffer)
+            if isinstance(prediction_result, str):
+                description = prediction_result
+                upload.description = description
+            else:
+                images, description = prediction_result
+                main_image, errors_images = images
 
-            upload.description = description
-            upload.output_image_key = main_image_file_key
+                main_image_file_buffer = put_image_in_file_buffer(main_image, "png")
+                main_image_file_key = file_storage.upload_file(main_image_file_buffer, ".png")
 
-            for index, error_image_with_description in enumerate(errors_images):
-                error_image, error_image_description = error_image_with_description
-                error_image_file_key = file_storage.upload_file(put_image_in_file_buffer(error_image), ".png")
-                attachment = Attachment(upload_id=upload.id, in_upload_index=index, image_file_key=error_image_file_key,
-                                        description=error_image_description)
-                database_session.add(attachment)
+                upload.description = description
+                upload.output_image_key = main_image_file_key
 
-        database_session.commit()
-        message_queue.publish_message(f"{upload_id}-done")
+                for index, error_image_with_description in enumerate(errors_images):
+                    error_image, error_image_description = error_image_with_description
+                    error_image_file_key = file_storage.upload_file(put_image_in_file_buffer(error_image), ".png")
+                    attachment = Attachment(upload_id=upload.id, in_upload_index=index, image_file_key=error_image_file_key,
+                                            description=error_image_description)
+                    database_session.add(attachment)
+
+            database_session.commit()
+            await message_queue.publish_message(f"{upload_id}-done")
+        except Exception as e:
+            print(e)
 
     return listener
 
@@ -74,7 +77,8 @@ def main(
         message_queue_consumer_client = RabbitMQClient(message_queue_user, message_queue_password, message_queue_host, message_queue_port, "ml", logger)
         message_queue_publisher_client = RabbitMQClient(message_queue_user, message_queue_password, message_queue_host, message_queue_port, "tg", logger)
 
-        await message_queue_consumer_client.consume_messages(create_listener(database_session, file_storage, message_queue_publisher_client))
+        while True:
+            await message_queue_consumer_client.consume_messages(create_listener(database_session, file_storage, message_queue_publisher_client))
 
     asyncio.run(startup())
 

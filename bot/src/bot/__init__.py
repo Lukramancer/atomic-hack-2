@@ -89,8 +89,9 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
     async def echo_handler(message: Message) -> None:
         await message.reply(get_formatted_message("default", message))
 
-    def listener(message: IncomingMessage):
+    async def listener(message: IncomingMessage):
         message = message.body.decode("utf-8")
+        print(message)
         if not message.endswith("-done"):
             return
 
@@ -103,7 +104,7 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
         if upload_id is None:
             return
 
-        bot.edit_message_text(get_formatted_message("description", None, {
+        await bot.edit_message_text(get_formatted_message("description", None, {
             "description": upload.description,
             "image_url": file_storage.get_file_url(upload.output_image_key)
         }), upload.chat_id, upload.bot_message_id)
