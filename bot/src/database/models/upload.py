@@ -18,3 +18,5 @@ class Upload(Base):
     description = Column(String, nullable=True)
 
     output_image_key = Column(String, nullable=True)
+
+    attachments = relationship("Attachment", back_populates="upload")
