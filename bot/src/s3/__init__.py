@@ -35,7 +35,7 @@ class FileStorage:
         return key
 
     def download_file(self, file_key: str) -> BytesIO:
-        self.client.get_object(Bucket=self.bucket_name, Key=file_key).get("Body")
+        return self.client.get_object(Bucket=self.bucket_name, Key=file_key).get("Body")
 
     def get_file_url(self, file_key: str) -> str:
         return f"{self.endpoint_url}/{self.bucket_name}/{file_key}"
