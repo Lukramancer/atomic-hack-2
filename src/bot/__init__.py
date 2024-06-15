@@ -32,10 +32,10 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
 
         image_file_buffer = BytesIO()
         await bot.download(message.photo[-1], destination=image_file_buffer)
-        key = file_storage.upload_file(image_file_buffer)
-
         second_image_file_buffer = BytesIO(image_file_buffer.read())
         image_file_buffer.seek(0)
+        key = file_storage.upload_file(image_file_buffer)
+
 
         upload = Upload(user_id=user_id, input_image_key=key)
         database_session.add(upload)
