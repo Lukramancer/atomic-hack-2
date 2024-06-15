@@ -1,9 +1,12 @@
+from dataclasses import dataclass
+
 from sqlalchemy import Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship
 
 from .base import Base
 
 
+@dataclass
 class Attachment(Base):
     __tablename__ = "attachments"
 
@@ -15,3 +18,4 @@ class Attachment(Base):
     in_upload_index = Column(Integer, nullable=False, default=0)
 
     image_file_key = Column(String, nullable=False)
+    description = Column(String, nullable=True)

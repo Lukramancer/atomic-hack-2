@@ -100,7 +100,7 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
             for index, error_image_with_description in enumerate(errors_images):
                 error_image, error_image_description = error_image_with_description
                 error_image_file_key = file_storage.upload_file(put_image_in_file_buffer(error_image), ".png")
-                attachment = Attachment(upload_id=upload.id, in_upload_index=index, image_file_key=error_image_file_key)
+                attachment = Attachment(upload_id=upload.id, in_upload_index=index, image_file_key=error_image_file_key, description=error_image_description)
                 database_session.add(attachment)
                 await message.reply(get_formatted_message("error_image", message, {
                     "error_image_url": file_storage.get_file_url(error_image_file_key),

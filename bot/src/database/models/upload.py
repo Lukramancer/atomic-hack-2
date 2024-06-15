@@ -1,9 +1,12 @@
+from dataclasses import dataclass
+
 from sqlalchemy import Column, Integer, ForeignKey, String, func, DateTime
 from sqlalchemy.orm import relationship
 
 from .base import Base
 
 
+@dataclass
 class Upload(Base):
     __tablename__ = "uploads"
 
