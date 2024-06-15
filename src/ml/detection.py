@@ -21,7 +21,7 @@ def make_predict(bytes: BytesIO):
     print(os.getcwd())
     model = YOLO("src/ml/models/best.pt")
 
-    result = model([image], iou=0.25, conf=0.04)[0]
+    result = model([image], iou=0.25, conf=0.15)[0]
     result = get_info_from_yolo_result(result)
 
     boxes_list.append(result[0])
@@ -32,9 +32,11 @@ def make_predict(bytes: BytesIO):
     results = get_ensemble_boxes(boxes_list, labels_list, scores_list)
 
     images_batch = np.transpose(np.asarray([image]), [0, 3, 1, 2])
-    print(results[0])
 
     boxes = np.array(results[0])[:, [2, 3, 0, 1]]
+
+    if not boxes:
+        return "Нет дефектов"
 
     result_image = Image.fromarray(plot_images(images_batch, 1, cls=np.array([results[1]]), bboxes=np.array([boxes]),
                        confs=np.array([results[2]]), save=False))
