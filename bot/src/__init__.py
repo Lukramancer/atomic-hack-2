@@ -1,10 +1,12 @@
-from .database import main as create_database_session
+from .database import main as create_database_session, Upload, Attachment
 from .s3 import FileStorage
 from .bot import main as telegram_bot_main
 from .ml import predict
+from .mq import RabbitMQClient
 from dotenv import load_dotenv
 
 load_dotenv()
+
 
 async def main(
         tg_bot_token: str,

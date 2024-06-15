@@ -18,6 +18,9 @@ class Upload(Base):
     input_image_key = Column(String, nullable=False)
     creation_time = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
+    chat_id = Column(Integer, nullable=True)
+    bot_message_id = Column(Integer, nullable=True)
+
     description = Column(String, nullable=True)
 
     output_image_key = Column(String, nullable=True)

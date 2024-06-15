@@ -9,7 +9,8 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from sqlalchemy.orm import Session
 
-from ..database import Upload, User, Attachment, register_user_if_not_exists
+from ..mq import RabbitMQClient
+from ..database import Upload, User, register_user_if_not_exists
 from ..s3 import FileStorage
 
 from .messages import get_formatted_message
@@ -22,7 +23,7 @@ def put_image_in_file_buffer(image: Image, file_format: str = "png") -> BytesIO:
     return image_file_buffer
 
 
-async def main(token: str, file_storage: FileStorage, database_session: Session, predict: Callable[[Any], str | tuple[tuple[Image, list[tuple[Image, str]]], str]]):
+async def main(token: str, file_storage: FileStorage, database_session: Session, message_queue_consumer_client: RabbitMQClient, message_queue_publisher_client: RabbitMQClient):
     bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
     dispatcher = Dispatcher()
@@ -68,7 +69,7 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
         user_id = message.from_user.id
         register_user_if_not_exists(database_session, user_id)
 
-        image_file_buffer, second_image_file_buffer = BytesIO(), BytesIO()
+        image_file_buffer = BytesIO()
         await bot.download(message.photo[-1], destination=image_file_buffer)
         key = file_storage.upload_file(image_file_buffer)
 
@@ -77,41 +78,37 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
         database_session.commit()
 
         bot_reply_message = await message.reply(get_formatted_message("uploaded", message, {"upload_id": str(upload.id)}))
-
-        await bot.download(message.photo[-1], destination=second_image_file_buffer)
-        prediction_result = predict(second_image_file_buffer)
-        if isinstance(prediction_result, str):
-            description = prediction_result
-            upload.description = description
-            await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
-        else:
-            images, description = prediction_result
-            main_image, errors_images = images
-
-            await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
-
-            main_image_file_buffer = put_image_in_file_buffer(main_image, "png")
-            main_image_file_key = file_storage.upload_file(main_image_file_buffer, ".png")
-            await message.reply(file_storage.get_file_url(main_image_file_key))
-
-            upload.description = description
-            upload.output_image_key = main_image_file_key
-
-            for index, error_image_with_description in enumerate(errors_images):
-                error_image, error_image_description = error_image_with_description
-                error_image_file_key = file_storage.upload_file(put_image_in_file_buffer(error_image), ".png")
-                attachment = Attachment(upload_id=upload.id, in_upload_index=index, image_file_key=error_image_file_key, description=error_image_description)
-                database_session.add(attachment)
-                await message.reply(get_formatted_message("error_image", message, {
-                    "error_image_url": file_storage.get_file_url(error_image_file_key),
-                    "error_image_description": error_image_description
-                }))
-
+        upload.chat_id = bot_reply_message.chat.id
+        upload.bot_message_id = bot_reply_message.message_id
         database_session.commit()
 
+        await message_queue_publisher_client.publish_message({"message": f"{upload.id}-created"})
 
     @dispatcher.message()
     async def echo_handler(message: Message) -> None:
         await message.reply(get_formatted_message("default", message))
 
+    def listener(message_body: dict):
+        message = message_body.get("message", str())
+        if not message.endswith("-done"):
+            return
+
+        try:
+            upload_id = int(message[:message.index("-done")])
+        except ValueError:
+            return
+
+        upload: Upload = database_session.query(Upload).get(upload_id)
+        if upload_id is None:
+            return
+
+        bot.edit_message_text(get_formatted_message("description", None, {
+            "description": upload.description,
+            "image_url": file_storage.get_file_url(upload.output_image_key)
+        }), upload.chat_id, upload.bot_message_id)
+
+
+    await message_queue_consumer_client.consume_messages(listener)
+
     await dispatcher.start_polling(bot)
+
