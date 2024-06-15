@@ -32,4 +32,8 @@ class RabbitMQClient:
         if self._channel is None or self._channel.is_closed:
             await self.connect()
 
-        await self._queue.consume(process_callable)
+        async def on_message(message: IncomingMessage):
+            async with message.process():
+                await process_callable(message)
+
+        await self._queue.consume(on_message)
