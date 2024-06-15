@@ -3,3 +3,4 @@
 .venv
 /src/ml/models/
 __pycache__/
+rabbitmq
