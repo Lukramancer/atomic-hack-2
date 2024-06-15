@@ -1,0 +1,15 @@
+from os import getenv
+import asyncio
+
+from src import main
+
+if __name__ == "__main__":
+    TG_BOT_TOKEN = getenv("TG_BOT_TOKEN")
+    S3_URL, S3_REGION, S3_ACCESS_KEY, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME = \
+        getenv("S3_URL"), getenv("S3_REGION"), getenv("S3_ACCESS_KEY"), getenv("S3_SECRET_ACCESS_KEY"), getenv("S3_BUCKET_NAME")
+    DATABASE_DRIVER, DATABASE_HOST, DATABASE_PORT, DATABASE_USERNAME, DATABASE_PASSWORD, DATABASE_NAME = \
+        getenv("DATABASE_DRIVER"), getenv("DATABASE_HOST"), int(getenv("DATABASE_PORT")), getenv("DATABASE_USER"), getenv("DATABASE_PASSWORD"), getenv("DATABASE_DBNAME")
+
+    asyncio.run(main(TG_BOT_TOKEN,
+                    DATABASE_DRIVER, DATABASE_HOST, DATABASE_PORT, DATABASE_USERNAME, DATABASE_PASSWORD, DATABASE_NAME,
+                    S3_URL, S3_REGION, S3_ACCESS_KEY, S3_SECRET_ACCESS_KEY, S3_BUCKET_NAME,))

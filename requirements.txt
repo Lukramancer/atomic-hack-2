@@ -1,9 +1,0 @@
-boto3==1.34.126
-aiogram==3.7.0
-psycopg2-binary==2.9.9
-SQLAlchemy==2.0.30
-Pillow==10.3.0
-ultralytics==8.2.320
-numpy==1.26.4
-ensemble-boxes==1.0.9
-opencv-python==4.10.0.82

@@ -1,0 +1,11 @@
+version: '3.9'
+services:
+  bot:
+    build:
+      context: bot
+      dockerfile: ./Dockerfile
+    ports:
+      - '8050:8050'
+    restart: always
+    env_file:
+      - .env
