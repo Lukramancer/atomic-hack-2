@@ -8,3 +8,4 @@ numpy==1.26.4
 ensemble-boxes==1.0.9
 python-dotenv
 aio_pika
+fastapi==0.111.0

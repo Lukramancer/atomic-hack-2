@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 STANDARD_WIDTH, STANDARD_HEIGHT = 512, 512
 INFO_HEIGHT, INFO_WIDTH = 64, 512
@@ -11,7 +11,7 @@ def generate_plots(
         confs,
         errors_map,
         line_width=5
-):
+) -> tuple[Image, list[tuple[Image, str]]]:
     image = image.convert("RGBA")
     images = []
 
@@ -31,13 +31,9 @@ def generate_plots(
 
         cropped_image = image.crop((left_border, top_border, right_border, bottom_border))
         cropped_image = cropped_image.resize((STANDARD_WIDTH, STANDARD_HEIGHT))
-        draw = ImageDraw.Draw((cropped_image))
-        draw.rectangle(((0, STANDARD_HEIGHT - INFO_HEIGHT), (INFO_WIDTH, STANDARD_HEIGHT)), fill=(0, 0, 0))
-        label = f"Дефект: {errors_map[cls[i]]['name']}\nВероятность: {confs[i] * 100:.2f} %"
-        font = ImageFont.truetype("arial.ttf", 24, encoding='UTF-8')
-        draw.text((10, STANDARD_HEIGHT - INFO_HEIGHT + 3), label, font=font, fill="white")
+        label = f"Дефект: {errors_map[cls[i]]['name']}"
 
-        images.append(cropped_image)
+        images.append((cropped_image, label))
 
     for i, box in enumerate(boxes):
         draw = ImageDraw.Draw(image)

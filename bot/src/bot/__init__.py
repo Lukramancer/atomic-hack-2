@@ -9,20 +9,20 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from sqlalchemy.orm import Session
 
-from src.database import Upload, register_user_if_not_exists, User
-from src.s3 import FileStorage
+from ..database import Upload, User, Attachment, register_user_if_not_exists
+from ..s3 import FileStorage
+
 from .messages import get_formatted_message
-from ..database.models.attachment import Attachment
 
 
-def put_image_in_file_buffer(image: Image, format: str = "png") -> BytesIO:
+def put_image_in_file_buffer(image: Image, file_format: str = "png") -> BytesIO:
     image_file_buffer = BytesIO()
-    image.save(image_file_buffer, format=format)
+    image.save(image_file_buffer, format=file_format)
     image_file_buffer.seek(0)
     return image_file_buffer
 
 
-async def main(token: str, file_storage: FileStorage, database_session: Session, predict: Callable[[Any], str | tuple[tuple[Image, list[Image]], str]]):
+async def main(token: str, file_storage: FileStorage, database_session: Session, predict: Callable[[Any], str | tuple[tuple[Image, list[tuple[Image, str]]], str]]):
     bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
     dispatcher = Dispatcher()
@@ -91,19 +91,21 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
             await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
 
             main_image_file_buffer = put_image_in_file_buffer(main_image, "png")
-            errors_images_file_buffers = list(map(put_image_in_file_buffer, errors_images))
-
             main_image_file_key = file_storage.upload_file(main_image_file_buffer, ".png")
             await message.reply(file_storage.get_file_url(main_image_file_key))
 
             upload.description = description
             upload.output_image_key = main_image_file_key
 
-            for index, error_image_file_buffer in enumerate(errors_images_file_buffers):
-                error_image_file_key = file_storage.upload_file(error_image_file_buffer, ".png")
-                attachment = Attachment(upload_id=upload.id, in_upload_index=index, image_file_key=error_image_file_key)
+            for index, error_image_with_description in enumerate(errors_images):
+                error_image, error_image_description = error_image_with_description
+                error_image_file_key = file_storage.upload_file(put_image_in_file_buffer(error_image), ".png")
+                attachment = Attachment(upload_id=upload.id, in_upload_index=index, image_file_key=error_image_file_key, description=error_image_description)
                 database_session.add(attachment)
-                await message.reply(file_storage.get_file_url(error_image_file_key))
+                await message.reply(get_formatted_message("error_image", message, {
+                    "error_image_url": file_storage.get_file_url(error_image_file_key),
+                    "error_image_description": error_image_description
+                }))
 
         database_session.commit()
 
