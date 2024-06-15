@@ -3,6 +3,7 @@ from io import BytesIO
 from PIL import Image
 from ultralytics import YOLO
 import numpy as np
+from collections import Counter
 
 from .utils import generate_plots
 from .models_parsing import get_info_from_yolo_result
@@ -32,7 +33,7 @@ def make_predict(bytes: BytesIO):
     results = get_ensemble_boxes(boxes_list, labels_list, scores_list)
 
     boxes = np.array(results[0])[:, [2, 3, 0, 1]]
-    cls = np.array(result[1])
+    cls = np.array(result[1], dtype="int")
     confs = np.array(result[2])
 
     if not boxes:
@@ -44,4 +45,8 @@ def make_predict(bytes: BytesIO):
     result_image.save(result_image_file_buffer, format="jpeg")
     print(result_image_file_buffer)
 
-    return result_image_file_buffer, "mocked"
+    errors = dict(Counter(cls))
+    errors = [f"{key} ({value})" for key, value in errors.items()]
+    text = "Обнаружены следующие ошибки: " + ", ".join(errors)
+
+    return result_image_file_buffer, text
