@@ -7,6 +7,8 @@ from .base import Base
 class Attachment(Base):
     __tablename__ = "attachments"
 
+    id = Column(Integer, nullable=False, primary_key=True, index=True, autoincrement=True)
+
     upload_id = Column(Integer, ForeignKey("uploads.id"), nullable=False)
     upload = relationship("Upload", back_populates="attachments")
 
