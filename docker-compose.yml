@@ -18,16 +18,26 @@ services:
     ports:
       - 15672:15672
       - 5672:5672
-  bot:
+  ml-worker:
     depends_on:
       - rabbitmq
     build:
       context: bot
-      dockerfile: ./Dockerfile
-    ports:
-      - '8050:8050'
+      dockerfile: DockerfileMLWorker
     restart: always
     env_file:
       - .env
     volumes:
       -  ./bot/src:/app/src
+  tg-worker:
+    depends_on:
+      - rabbitmq
+      - ml-worker
+    build:
+      context: bot
+      dockerfile: DockerfileTGWorker
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./bot/src:/app/src

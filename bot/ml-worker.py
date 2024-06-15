@@ -6,8 +6,7 @@ import asyncio
 from PIL.Image import Image
 from sqlalchemy.orm import Session
 
-from bot.src import predict, Attachment
-from src import create_database_session, FileStorage, RabbitMQClient, Upload
+from src import predict, Attachment, create_database_session, FileStorage, RabbitMQClient, Upload
 
 
 def create_listener(database_session: Session, file_storage: FileStorage, message_queue: RabbitMQClient):
@@ -18,7 +17,8 @@ def create_listener(database_session: Session, file_storage: FileStorage, messag
         return image_file_buffer
 
     def listener(message_body: dict):
-        message = message_body.get("message", str())
+        print(message_body.body)
+        message = message_body.body
         if not message.endswith("-created"):
             return
 
