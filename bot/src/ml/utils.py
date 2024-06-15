@@ -31,7 +31,7 @@ def generate_plots(
 
         cropped_image = image.crop((left_border, top_border, right_border, bottom_border))
         cropped_image = cropped_image.resize((STANDARD_WIDTH, STANDARD_HEIGHT))
-        label = f"Дефект: {errors_map[cls[i]]['name']}\nВероятность: {confs[i] * 100:.2f} %"
+        label = f"Дефект: {errors_map[cls[i]]['name']}"
 
         images.append([cropped_image, label])
 
