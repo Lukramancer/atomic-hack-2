@@ -42,7 +42,7 @@ def make_predict(bytes: BytesIO) -> str | tuple[tuple[Image, list[tuple[Image, s
     result_image, defect_images = generate_plots(image, cls, boxes, confs, errors)
 
     errors_counters = dict(Counter(cls))
-    errors_counters = [f"{errors[key]["name"]} ({value})" for key, value in errors_counters.items()]
+    errors_counters = [f"{errors[key]['name']} ({value})" for key, value in errors_counters.items()]
     text = "Обнаружены следующие ошибки: " + ", ".join(errors_counters)
 
     return (result_image, defect_images), text
