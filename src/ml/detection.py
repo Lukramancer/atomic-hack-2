@@ -4,9 +4,10 @@ from PIL import Image
 from ultralytics import YOLO
 import numpy as np
 
-from .utils import plot_images
+from .utils import generate_plots
 from .models_parsing import get_info_from_yolo_result
 from .ensemble import get_ensemble_boxes
+from .errors_mapping import errors
 
 
 def make_predict(bytes: BytesIO):
@@ -18,7 +19,6 @@ def make_predict(bytes: BytesIO):
 
     # Получение результатов с моделек
     # YOLO
-    print(os.getcwd())
     model = YOLO("src/ml/models/best.pt")
 
     result = model([image], iou=0.25, conf=0.15)[0]
@@ -31,15 +31,14 @@ def make_predict(bytes: BytesIO):
     # Получаем ансамбль
     results = get_ensemble_boxes(boxes_list, labels_list, scores_list)
 
-    images_batch = np.transpose(np.asarray([image]), [0, 3, 1, 2])
-
     boxes = np.array(results[0])[:, [2, 3, 0, 1]]
+    cls = np.array(result[1])
+    confs = np.array(result[2])
 
     if not boxes:
         return "Нет дефектов"
 
-    result_image = Image.fromarray(plot_images(images_batch, 1, cls=np.array([results[1]]), bboxes=np.array([boxes]),
-                       confs=np.array([results[2]]), save=False))
+    result_image, defect_images = generate_plots(image, cls, boxes, confs, errors)
 
     result_image_file_buffer = BytesIO()
     result_image.save(result_image_file_buffer, format="jpeg")
