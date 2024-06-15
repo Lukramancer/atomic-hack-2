@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import Callable, Any
 
+from PIL.Image import Image
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -11,9 +12,17 @@ from sqlalchemy.orm import Session
 from src.database import Upload, register_user_if_not_exists, User
 from src.s3 import FileStorage
 from .messages import get_formatted_message
+from ..database.models.attachment import Attachment
 
 
-async def main(token: str, file_storage: FileStorage, database_session: Session, predict: Callable[[Any], tuple[BytesIO, str]]):
+def put_image_in_file_buffer(image: Image, format: str = "png") -> BytesIO:
+    image_file_buffer = BytesIO()
+    image.save(image_file_buffer, format=format)
+    image_file_buffer.seek(0)
+    return image_file_buffer
+
+
+async def main(token: str, file_storage: FileStorage, database_session: Session, predict: Callable[[Any], str | tuple[tuple[Image, list[Image]], str]]):
     bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
     dispatcher = Dispatcher()
@@ -70,21 +79,37 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
         bot_reply_message = await message.reply(get_formatted_message("uploaded", message, {"upload_id": str(upload.id)}))
 
         await bot.download(message.photo[-1], destination=second_image_file_buffer)
-        highlighted_image_file_buffer, description = predict(second_image_file_buffer)
+        prediction_result = predict(second_image_file_buffer)
+        if isinstance(prediction_result, str):
+            description = prediction_result
+            upload.description = description
+            await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
+        else:
+            images, description = prediction_result
+            main_image, errors_images = images
 
-        highlighted_image_file_buffer.seek(0)
-        highlighted_image_file_key = file_storage.upload_file(highlighted_image_file_buffer, ".jpg")
+            await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
 
-        upload.description = description
-        upload.output_image_key = highlighted_image_file_key
+            main_image_file_buffer = put_image_in_file_buffer(main_image, "png")
+            errors_images_file_buffers = list(map(put_image_in_file_buffer, errors_images))
+
+            main_image_file_key = file_storage.upload_file(main_image_file_buffer, ".png")
+            await message.reply(file_storage.get_file_url(main_image_file_key))
+
+            upload.description = description
+            upload.output_image_key = main_image_file_key
+
+            for index, error_image_file_buffer in enumerate(errors_images_file_buffers):
+                error_image_file_key = file_storage.upload_file(error_image_file_buffer, ".png")
+                attachment = Attachment(upload_id=upload.id, in_upload_index=index, image_file_key=error_image_file_key)
+                database_session.add(attachment)
+                await message.reply(file_storage.get_file_url(error_image_file_key))
+
         database_session.commit()
 
-        await message.reply(file_storage.get_file_url(highlighted_image_file_key))
-        await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
 
     @dispatcher.message()
     async def echo_handler(message: Message) -> None:
         await message.reply(get_formatted_message("default", message))
 
     await dispatcher.start_polling(bot)
-
