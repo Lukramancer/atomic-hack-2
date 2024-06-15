@@ -42,6 +42,8 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
 
         description = get_description(bytes_buffer)
 
+        upload.description = description
+        database_session.commit()
         await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
 
     @dispatcher.message()
