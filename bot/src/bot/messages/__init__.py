@@ -13,14 +13,17 @@ for template_file_path in filter(lambda path: path.is_file(), MESSAGES_TEMPLATES
         TEMPLATES[template_name] = template
 
 
-def get_formatted_message(template_name: str, context_message: Message, context: dict[str, str] | None = None) -> str:
+def get_formatted_message(template_name: str, context_message: Message | None, context: dict[str, str] | None = None) -> str:
     template = TEMPLATES.get(template_name)
 
-    formatting_data_dict: dict[str, str] = {
-        "full_user_name": context_message.from_user.full_name,
-        "first_user_name": context_message.from_user.first_name,
-        "last_user_name": context_message.from_user.last_name,
-    }
+    if context_message is not None:
+        formatting_data_dict: dict[str, str] = {
+            "full_user_name": context_message.from_user.full_name,
+            "first_user_name": context_message.from_user.first_name,
+            "last_user_name": context_message.from_user.last_name,
+        }
+    else:
+        formatting_data_dict = dict[str, str]()
 
     if context is not None:
         formatting_data_dict |= context

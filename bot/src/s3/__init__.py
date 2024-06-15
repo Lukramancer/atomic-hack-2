@@ -1,3 +1,5 @@
+from io import BytesIO
+
 from botocore.config import Config
 from boto3 import client
 
@@ -31,6 +33,9 @@ class FileStorage:
         key = self.generate_key(suffix)
         self.client.upload_fileobj(file, self.bucket_name, key)
         return key
+
+    def download_file(self, file_key: str) -> BytesIO:
+        self.client.get_object(Bucket=self.bucket_name, Key=file_key).get("Body")
 
     def get_file_url(self, file_key: str) -> str:
         return f"{self.endpoint_url}/{self.bucket_name}/{file_key}"
