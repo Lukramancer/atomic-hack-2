@@ -1,7 +1,7 @@
-from io import BytesIO
+from PIL.Image import Image
 
 from .detection import make_predict
 
 
-def predict(image) -> tuple[BytesIO, str]:
+def predict(image) -> str | tuple[tuple[Image, list[tuple[Image, str]]], str]:
     return make_predict(image)

@@ -1,4 +1,4 @@
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 STANDARD_WIDTH, STANDARD_HEIGHT = 512, 512
 INFO_HEIGHT, INFO_WIDTH = 64, 512
@@ -11,7 +11,7 @@ def generate_plots(
         confs,
         errors_map,
         line_width=5
-):
+) -> tuple[Image, list[tuple[Image, str]]]:
     image = image.convert("RGBA")
     images = []
 
@@ -33,7 +33,7 @@ def generate_plots(
         cropped_image = cropped_image.resize((STANDARD_WIDTH, STANDARD_HEIGHT))
         label = f"Дефект: {errors_map[cls[i]]['name']}"
 
-        images.append([cropped_image, label])
+        images.append((cropped_image, label))
 
     for i, box in enumerate(boxes):
         draw = ImageDraw.Draw(image)

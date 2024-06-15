@@ -11,7 +11,7 @@ from .ensemble import get_ensemble_boxes
 from .errors_mapping import errors
 
 
-def make_predict(bytes: BytesIO) -> str | tuple[tuple[Image, list[Image]], str]:
+def make_predict(bytes: BytesIO) -> str | tuple[tuple[Image, list[tuple[Image, str]]], str]:
     image = Image.open(bytes)
 
     boxes_list = []
