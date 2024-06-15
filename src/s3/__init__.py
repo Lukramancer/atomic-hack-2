@@ -24,11 +24,11 @@ class FileStorage:
             config=Config(s3={"addressing_style": "path"})
         )
 
-    def generate_key(self) -> str:
-        return str().join(sample(list(ascii_letters), self.key_length))
+    def generate_key(self, suffix: str = "") -> str:
+        return str().join(sample(list(ascii_letters), self.key_length)) + suffix
 
-    def upload_file(self, file) -> str:
-        key = self.generate_key()
+    def upload_file(self, file, suffix: str = "") -> str:
+        key = self.generate_key(suffix)
         self.client.upload_fileobj(file, self.bucket_name, key)
         return key
 
