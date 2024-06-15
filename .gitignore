@@ -1,3 +1,5 @@
 .env
 .idea
 .venv
+/src/ml/models/
+__pycache__/
