@@ -21,7 +21,7 @@ def make_predict(bytes: BytesIO):
     print(os.getcwd())
     model = YOLO("src/ml/models/best.pt")
 
-    result = model([image], iou=0.5, conf=0.1)[0]
+    result = model([image], iou=0.25, conf=0.04)[0]
     result = get_info_from_yolo_result(result)
 
     boxes_list.append(result[0])
