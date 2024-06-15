@@ -13,7 +13,7 @@ from src.s3 import FileStorage
 from .messages import get_formatted_message
 
 
-async def main(token: str, file_storage: FileStorage, database_session: Session, get_description: Callable[[Any], str]):
+async def main(token: str, file_storage: FileStorage, database_session: Session, predict: Callable[[Any], tuple[BytesIO, str]]):
     bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
 
     dispatcher = Dispatcher()
@@ -41,10 +41,16 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
         bot_reply_message = await message.reply(get_formatted_message("uploaded", message, {"upload_id": str(upload.id)}))
 
         await bot.download(message.photo[-1], destination=second_image_file_buffer)
-        description = get_description(second_image_file_buffer)
+        highlighted_image_file_buffer, description = predict(second_image_file_buffer)
+
+        highlighted_image_file_buffer.seek(0)
+        highlighted_image_file_key = file_storage.upload_file(highlighted_image_file_buffer, ".jpg")
 
         upload.description = description
+        upload.output_image_key = highlighted_image_file_key
         database_session.commit()
+
+        await message.reply(file_storage.get_file_url(highlighted_image_file_key))
         await bot_reply_message.edit_text(get_formatted_message("description", message, {"description": description}))
 
     @dispatcher.message()

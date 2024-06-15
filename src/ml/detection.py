@@ -35,7 +35,12 @@ def make_predict(bytes: BytesIO):
     print(results[0])
 
     boxes = np.array(results[0])[:, [2, 3, 0, 1]]
-    print(boxes)
 
-    return plot_images(images_batch, 1, cls=np.array([results[1]]), bboxes=np.array([boxes]),
-                       confs=np.array([results[2]]), save=False)
+    result_image = Image.fromarray(plot_images(images_batch, 1, cls=np.array([results[1]]), bboxes=np.array([boxes]),
+                       confs=np.array([results[2]]), save=False))
+
+    result_image_file_buffer = BytesIO()
+    result_image.save(result_image_file_buffer, format="jpeg")
+    print(result_image_file_buffer)
+
+    return result_image_file_buffer, "mocked"
