@@ -9,15 +9,15 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from sqlalchemy.orm import Session
 
-from src.database import Upload, register_user_if_not_exists, User
-from src.s3 import FileStorage
+from ..database import Upload, User, Attachment, register_user_if_not_exists
+from ..s3 import FileStorage
+
 from .messages import get_formatted_message
-from ..database.models.attachment import Attachment
 
 
-def put_image_in_file_buffer(image: Image, format: str = "png") -> BytesIO:
+def put_image_in_file_buffer(image: Image, file_format: str = "png") -> BytesIO:
     image_file_buffer = BytesIO()
-    image.save(image_file_buffer, format=format)
+    image.save(image_file_buffer, format=file_format)
     image_file_buffer.seek(0)
     return image_file_buffer
 
