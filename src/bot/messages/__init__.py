@@ -8,7 +8,7 @@ MESSAGES_TEMPLATES_DIRECTORY_PATH = Path(__file__).parent.joinpath("templates")
 TEMPLATES = dict[str, str]()
 for template_file_path in filter(lambda path: path.is_file(), MESSAGES_TEMPLATES_DIRECTORY_PATH.rglob("*")):
     template_name = str(template_file_path.relative_to(MESSAGES_TEMPLATES_DIRECTORY_PATH))
-    with open(template_file_path) as template_file:
+    with open(template_file_path,encoding="utf8") as template_file:
         template = template_file.read()
         TEMPLATES[template_name] = template
 

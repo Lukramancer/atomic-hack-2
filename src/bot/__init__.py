@@ -30,12 +30,9 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
         user_id = message.from_user.id
         register_user_if_not_exists(database_session, user_id)
 
-        image_file_buffer = BytesIO()
+        image_file_buffer, second_image_file_buffer = BytesIO(), BytesIO()
         await bot.download(message.photo[-1], destination=image_file_buffer)
         key = file_storage.upload_file(image_file_buffer)
-
-        second_image_file_buffer = BytesIO(image_file_buffer.read())
-        image_file_buffer.seek(0)
 
         upload = Upload(user_id=user_id, input_image_key=key)
         database_session.add(upload)
@@ -43,6 +40,7 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
 
         bot_reply_message = await message.reply(get_formatted_message("uploaded", message, {"upload_id": str(upload.id)}))
 
+        await bot.download(message.photo[-1], destination=second_image_file_buffer)
         description = get_description(second_image_file_buffer)
 
         upload.description = description
