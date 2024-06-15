@@ -11,7 +11,7 @@ from .ensemble import get_ensemble_boxes
 from .errors_mapping import errors
 
 
-def make_predict(bytes: BytesIO):
+def make_predict(bytes: BytesIO) -> str | tuple[tuple[Image, list[Image]], str]:
     image = Image.open(bytes)
 
     boxes_list = []
@@ -36,17 +36,13 @@ def make_predict(bytes: BytesIO):
     cls = np.array(result[1], dtype="int")
     confs = np.array(result[2])
 
-    if not boxes:
+    if len(boxes) == 0:
         return "Нет дефектов"
 
     result_image, defect_images = generate_plots(image, cls, boxes, confs, errors)
 
-    result_image_file_buffer = BytesIO()
-    result_image.save(result_image_file_buffer, format="jpeg")
-    print(result_image_file_buffer)
+    errors_counters = dict(Counter(cls))
+    errors_counters = [f"{errors[key]["name"]} ({value})" for key, value in errors_counters.items()]
+    text = "Обнаружены следующие ошибки: " + ", ".join(errors_counters)
 
-    errors = dict(Counter(cls))
-    errors = [f"{key} ({value})" for key, value in errors.items()]
-    text = "Обнаружены следующие ошибки: " + ", ".join(errors)
-
-    return result_image_file_buffer, text
+    return (result_image, defect_images), text
