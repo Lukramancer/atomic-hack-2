@@ -2,6 +2,7 @@ from io import BytesIO
 from typing import Callable, Any
 
 from PIL.Image import Image
+from aio_pika import IncomingMessage
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
@@ -82,14 +83,14 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
         upload.bot_message_id = bot_reply_message.message_id
         database_session.commit()
 
-        await message_queue_publisher_client.publish_message({"message": f"{upload.id}-created"})
+        await message_queue_publisher_client.publish_message(f"{upload.id}-created")
 
     @dispatcher.message()
     async def echo_handler(message: Message) -> None:
         await message.reply(get_formatted_message("default", message))
 
-    def listener(message_body: dict):
-        message = message_body.get("message", str())
+    def listener(message: IncomingMessage):
+        message = message.body.decode("utf-8")
         if not message.endswith("-done"):
             return
 

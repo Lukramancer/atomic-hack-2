@@ -1,5 +1,6 @@
 from typing import Any, Callable
 import aio_pika
+from aio_pika import IncomingMessage
 
 
 class RabbitMQClient:
@@ -17,7 +18,7 @@ class RabbitMQClient:
         await self._channel.set_qos(prefetch_count=1)
         self._queue = await self._channel.declare_queue(self._queue_name, durable=True)
 
-    async def publish_message(self, message: dict[str, Any]):
+    async def publish_message(self, message: Any):
         if self._channel is None or self._channel.is_closed:
             await self.connect()
 
@@ -27,7 +28,7 @@ class RabbitMQClient:
         )
         self.logger.info(f"Published message: {message}")
 
-    async def consume_messages(self, process_callable: Callable[[dict[str, Any]], Any]):
+    async def consume_messages(self, process_callable: Callable[[IncomingMessage], Any]):
         if self._channel is None or self._channel.is_closed:
             await self.connect()
 
