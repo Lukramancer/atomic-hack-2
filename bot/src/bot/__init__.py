@@ -104,11 +104,17 @@ async def main(token: str, file_storage: FileStorage, database_session: Session,
         if upload_id is None:
             return
 
-        await bot.edit_message_text(get_formatted_message("description", None, {
-            "description": upload.description,
-            "image_url": file_storage.get_file_url(upload.output_image_key)
-        }), upload.chat_id, upload.bot_message_id)
+        if upload.output_image_key is not None:
+            message_new_text = get_formatted_message("description_with_image", None, {
+                "description": upload.description,
+                "image_url": file_storage.get_file_url(upload.output_image_key)
+            })
+        else:
+            message_new_text = get_formatted_message("description", None, {
+                "description": upload.description
+            })
 
+        await bot.edit_message_text(message_new_text, upload.chat_id, upload.bot_message_id)
 
     await message_queue_consumer_client.consume_messages(listener)
 
