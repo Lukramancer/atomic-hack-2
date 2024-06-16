@@ -32,13 +32,13 @@ def dictify(row) -> dict:
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
 
-@app.post("/api/uploads/{upload_id}/attachments")
+@app.get("/api/uploads/{upload_id}/attachments")
 async def get_attachments(upload_id: int):
     attachments = database_session.query(Attachment).where(Attachment.upload_id == upload_id).all()
     return list(map(dictify, attachments))
 
 
-@app.post("/api/uploads/{upload_id}")
+@app.get("/api/uploads/{upload_id}")
 async def get_upload(upload_id: int):
     upload = database_session.query(Upload).get(upload_id)
 
@@ -50,7 +50,7 @@ async def get_upload(upload_id: int):
     return upload_data
 
 
-@app.post("/api/get_uploads")
+@app.get("/api/get_uploads")
 async def get_uploads(user_id: int):
     uploads_ids = database_session.query(Upload.id).where(Upload.user_id == user_id).all()
     results = list()

@@ -32,7 +32,6 @@ services:
   tg-worker:
     depends_on:
       - rabbitmq
-      - ml-worker
     build:
       context: bot
       dockerfile: DockerfileTGWorker
@@ -41,3 +40,14 @@ services:
       - .env
     volumes:
       - ./bot/src:/app/src
+  api:
+    build:
+      context: bot
+      dockerfile: DockerfileApi
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./bot/src:/app/src
+    ports:
+      - 8000:8000
