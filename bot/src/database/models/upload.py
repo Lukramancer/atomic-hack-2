@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from sqlalchemy import Column, Integer, ForeignKey, String, func, DateTime
+from sqlalchemy import Column, Integer, ForeignKey, String, func, DateTime, BigInteger
 from sqlalchemy.orm import relationship
 
 from .base import Base
@@ -12,14 +12,14 @@ class Upload(Base):
 
     id = Column(Integer, nullable=False, primary_key=True, index=True, autoincrement=True)
 
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
     user = relationship("User", back_populates="uploads")
 
     input_image_key = Column(String, nullable=False)
     creation_time = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
-    chat_id = Column(Integer, nullable=True)
-    bot_message_id = Column(Integer, nullable=True)
+    chat_id = Column(BigInteger, nullable=True)
+    bot_message_id = Column(BigInteger, nullable=True)
 
     description = Column(String, nullable=True)
 
